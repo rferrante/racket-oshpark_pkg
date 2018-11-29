@@ -54,7 +54,7 @@
   [in-targets-parent-dir? (displayln "current directory is the project directory, changing to ./Outputs")
                           (current-directory (build-path (current-directory) "Outputs"))
                           (printf "current directory has been changed to ~a\n" (~a/green (current-directory)))]
-  [else (println "Invalid current-directory: must be in project directory or 'Outputs'!") (exit)])
+  [else (displayln "Invalid current-directory: must be in project directory or 'Outputs'!") (exit)])
 
 ; We are now in Outputs, the target directory, or we have exited
 ;
@@ -73,7 +73,7 @@
   (define gko-files (find-files (extension-checker ".GKO")))
   (cond
     [(not (empty? outline-files))
-     (println "renaming outline file...")
+     (displayln "renaming outline file...")
      (rename-file-or-directory (first outline-files) (path-replace-extension (first outline-files) ".GKO") #t)]
     [(not (empty? gko-files)) ; and we know already outline-files must be empty
      (cprintf 'yellow "Could not find .Outline file to rename, using existing .GKO file.\n")]
@@ -98,7 +98,7 @@
     (when (validator)
       (zip->output screen-files (open-output-file (string-append base "_stencil" ".zip") #:exists 'replace))
       (zip->output (append board-files drill-files) (open-output-file (string-append base "_board" ".zip") #:exists 'replace))
-      (println "Done!"))))
+      (displayln "Done!"))))
 
 (when (*execute-mode*) (execute))
 (current-directory orig-directory)
