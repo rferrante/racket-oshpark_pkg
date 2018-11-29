@@ -61,7 +61,7 @@
 
 (current-directory "../")
 (define project-files (find-files is-project-file? #:skip-filtered-directory? #t))
-(when (empty? project-files) (cprintf 'r "Project file not found!") (exit))
+(when (empty? project-files) (cprintf 'r "Project file not found!\n") (exit))
 (current-directory (build-path (current-directory) "Outputs"))
 
 (define validator (make-validator))
@@ -76,7 +76,7 @@
      (println "renaming outline file...")
      (rename-file-or-directory (first outline-files) (path-replace-extension (first outline-files) ".GKO") #t)]
     [(not (empty? gko-files)) ; and we know already outline-files must be empty
-     (cprintf 'yellow "Could not find .Outline file to rename, using existing .GKO file.")]
+     (cprintf 'yellow "Could not find .Outline file to rename, using existing .GKO file.\n")]
     [else ; there is no .GKO and no .Outline to make one from
       (validator "Could not find new .Outline file and there is no existing .GKO file!")])
   
@@ -86,7 +86,7 @@
     (define screen-files (find-files is-screen-file? #:skip-filtered-directory? #t))
     (if (empty? screen-files)
       (validator  "No paste file found in Outputs directory, aborting!")
-      (cprintf 'white "~a pat file(s) found\n" (length screen-files)))
+      (cprintf 'white "~a paste file(s) found\n" (length screen-files)))
     (define board-files (find-files is-board-file? #:skip-filtered-directory? #t))
 
     (if (empty? board-files)
