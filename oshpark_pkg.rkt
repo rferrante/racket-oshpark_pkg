@@ -1,3 +1,6 @@
+;; this program will collect gerber files from an Altium "Outputs"
+;; directory and build two zip files, one for OSHPark PCBoards, and one for
+;; OSHStencil stencils. Run it from the directory containing the PrjPcb project file.
 #lang racket
 (require file/zip)
 (require "clilib.rkt")
@@ -6,6 +9,9 @@
 (command-line
  #:once-each [("-x" "--execute") "Execute build of compressed files for OSH Park and OSH Stencil"
                                  (*execute-mode* #t)])
+
+(displayln ">>>oshpark_pkg.exe v 1.0")
+
 (define (get-file-base p)
   (path->string (path-replace-extension (file-name-from-path p) "")))
   
