@@ -27,6 +27,8 @@
 (define (is-board-file? p)
   (or (path-has-extension? p ".GTO")
       (path-has-extension? p ".GTP")
+      (path-has-extension? p ".G1") ; for 4-layer boards
+      (path-has-extension? p ".G2") ; for 4 layer boards
       (path-has-extension? p ".GTS")
       (path-has-extension? p ".GTL")
       (path-has-extension? p ".GBO")
