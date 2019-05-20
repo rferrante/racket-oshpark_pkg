@@ -18,6 +18,10 @@
 (define (is-project-file? p)
   (path-has-extension? p ".PrjPcb"))
 
+(define (is-pcb-file? p)
+  (path-has-extension? p ".CSPcbDoc"))
+
+
 (define in-target-dir? (string-ci=? "Outputs"
                                     (path->string (last (explode-path (current-directory))))))
 
@@ -27,8 +31,8 @@
 (define (is-board-file? p)
   (or (path-has-extension? p ".GTO")
       (path-has-extension? p ".GTP")
-      (path-has-extension? p ".G1") ; for 4-layer boards
-      (path-has-extension? p ".G2") ; for 4 layer boards
+      (path-has-extension? p ".G2L") ; for 4-layer boards
+      (path-has-extension? p ".G3L") ; for 4 layer boards
       (path-has-extension? p ".GTS")
       (path-has-extension? p ".GTL")
       (path-has-extension? p ".GBO")
@@ -45,6 +49,12 @@
   (path-has-extension? p ".TXT"))
 
 (define (extension-checker ext) (lambda (x) (path-has-extension? x ext)))
+
+(define (rename-maybe oldext newext)
+  (define files (find-files (extension-checker oldext)))
+  (cond
+    [(empty? files) #f]
+    [else (rename-file-or-directory (first files) (path-replace-extension (first files) newext) #t) #t]))
 
 (define (make-validator)
   (let ([errors '()])
@@ -68,44 +78,58 @@
 ;
 
 (current-directory "../")
+;; get project base name
 (define project-files (find-files is-project-file? #:skip-filtered-directory? #t))
 (when (empty? project-files) (cprintf 'r "Project file not found!\n") (exit))
+(define prj-base (get-file-base (first project-files)))
+(printf "Base project name=~a\n" (~a/green prj-base))
+; get pcb base name
+(define pcb-files (find-files is-pcb-file? #:skip-filtered-directory? #t))
+(when (empty? pcb-files) (cprintf 'r "CSPcbDoc file not found!\n") (exit))
+(define pcb-base (get-file-base (first pcb-files)))
+(printf "Base pcb name=~a\n" (~a/green pcb-base))
 (current-directory (build-path (current-directory) "Outputs"))
 
 (define validator (make-validator))
 
+(define (copy-maybe src dest)
+  (let ([full-src (string-append pcb-base src)]
+        [full-dest (string-append pcb-base dest)])
+    (cond
+      [(file-exists? full-src)
+        (copy-file full-src full-dest #t)
+        (cprintf 'white "Copied ~a to ~a\n" full-src full-dest)
+        #t]
+      [else #f])))
+
 (displayln (if (*execute-mode*) "will execute..." "will not execute."))
 
 (define (execute)
-  (define outline-files (find-files (extension-checker ".Outline")))
-  (define gko-files (find-files (extension-checker ".GKO")))
-  (cond
-    [(not (empty? outline-files))
-     (displayln "renaming outline file...")
-     (rename-file-or-directory (first outline-files) (path-replace-extension (first outline-files) ".GKO") #t)]
-    [(not (empty? gko-files)) ; and we know already outline-files must be empty
-     (cprintf 'yellow "Could not find .Outline file to rename, using existing .GKO file.\n")]
-    [else ; there is no .GKO and no .Outline to make one from
-      (validator "Could not find new .Outline file and there is no existing .GKO file!")])
-  
+  ;; if there is a .Outline file, it might be newer than a .GKO file, but can't be older
+  ;; so we look for the .Outline first and use that if found, if not abort
+  (unless (copy-maybe ".Outline" ".GKO")
+    (validator  "Could not find .Outline file!"))
+
   (when (validator)
-    (define base (get-file-base (first project-files)))
     
     (define screen-files (find-files is-screen-file? #:skip-filtered-directory? #t))
     (if (empty? screen-files)
       (validator  "No paste file found in Outputs directory, aborting!")
       (cprintf 'white "~a paste file(s) found\n" (length screen-files)))
-    (define board-files (find-files is-board-file? #:skip-filtered-directory? #t))
 
+    (cprintf 'white "~a-layer board.\n" (if (and (copy-maybe ".G1" ".G2L") (copy-maybe ".G2" ".G3L")) 4 2))
+
+    (define board-files (find-files is-board-file? #:skip-filtered-directory? #t))
     (if (empty? board-files)
       (validator  "No board files found in Outputs directory, aborting!")
       (cprintf 'white "~a board files found.\n" (length board-files)))
 
     (define drill-files (find-files is-drill-file? #:skip-filtered-directory? #t))
     (when (empty? drill-files) (validator  "No drill files found in Outputs directory, aborting!"))
+    
     (when (validator)
-      (zip->output screen-files (open-output-file (string-append base "_stencil" ".zip") #:exists 'replace))
-      (zip->output (append board-files drill-files) (open-output-file (string-append base "_board" ".zip") #:exists 'replace))
+      (zip->output screen-files (open-output-file (string-append prj-base "_stencil" ".zip") #:exists 'replace))
+      (zip->output (append board-files drill-files) (open-output-file (string-append prj-base "_board" ".zip") #:exists 'replace))
       (displayln "Done!"))))
 
 (when (*execute-mode*) (execute))
