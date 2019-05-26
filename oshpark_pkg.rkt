@@ -10,8 +10,10 @@
 ;; if you don't, the program will find it from the .CSPcbDoc file in the project directory
 (define *board-base* (make-parameter #f))
 (command-line
-  #:usage-help "Package Altium CircuitStudio gerber files for OSH Park and OSH Stencils\n  ex: oshpark_pkg -x <board-name>
-  <board-name> defaults to the base name of the .CSPcbDoc file found in the project directory."
+  #:usage-help "Package Altium CircuitStudio gerber files for OSH Park and OSH Stencils"
+  "Version 1.1"
+  "ex: oshpark_pkg.exe -x <board-name>"
+  "<board-name> is optional, it defaults to the base name of the .CSPcbDoc file found in the project directory."
   #:once-each [("-x" "--execute") "Create 2 zip archives of files for OSH Park and OSH Stencil"
                                  (*execute-mode* #t)]
   #:args ([board-base #f]) (*board-base* (if (string? board-base) (string-upcase board-base) #f)))
